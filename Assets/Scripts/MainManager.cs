@@ -1,8 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
+
 
 public class MainManager : MonoBehaviour
 {
@@ -10,18 +9,26 @@ public class MainManager : MonoBehaviour
     public int LineCount = 6;
     public Rigidbody Ball;
 
-    public Text ScoreText;
+    public TextMeshProUGUI ScoreText;
     public GameObject GameOverText;
+    public TextMeshProUGUI BestScoreText;
+    public string PlayerName;
     
     private bool m_Started = false;
     private int m_Points;
     
     private bool m_GameOver = false;
+    private int m_BestScore = 0;
+    private string m_BestPlayer = "";
 
     
     // Start is called before the first frame update
     void Start()
     {
+        // Get player name from PlayerPrefs
+        PlayerName = PlayerPrefs.GetString("CurrentPlayerName", "Player");
+        // Always update and display the latest best score at scene start
+        UpdateBestScoreUI();
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
         
@@ -72,5 +79,27 @@ public class MainManager : MonoBehaviour
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+        // Save best score if current is higher
+        if (!string.IsNullOrEmpty(PlayerName))
+        {
+            DataPersistManager.Instance.SaveBestScore(PlayerName, m_Points);
+            // Update best score UI if new best
+            UpdateBestScoreUI();
+        }
+    }
+
+    private void UpdateBestScoreUI()
+    {
+        var bestData = DataPersistManager.Instance.LoadBestScore();
+        if (bestData != null && !string.IsNullOrEmpty(bestData.PlayerName))
+        {
+            m_BestScore = bestData.Score;
+            m_BestPlayer = bestData.PlayerName;
+            BestScoreText.text = $"Best Score : {m_BestPlayer} : {m_BestScore}";
+        }
+        else
+        {
+            BestScoreText.text = "";
+        }
     }
 }
